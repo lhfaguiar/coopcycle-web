@@ -960,3 +960,7 @@ fulfillment_method.collection: Collection
 basics.allow_edit: Allow editing
 form.price_with_tax.tax_excl.label: Price (tax excl.)
 form.price_with_tax.tax_incl.label: Price (tax incl.)
+tax_category.food: Food
+tax_category.drink: Drink
+tax_category.alcoholic_drink: Alcoholic drink
+tax_category.service: Service

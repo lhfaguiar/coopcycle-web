@@ -20,10 +20,12 @@ use Sylius\Component\Payment\Model\PaymentMethod;
 use Sylius\Component\Promotion\Model\Promotion;
 use Sylius\Component\Promotion\Model\PromotionAction;
 use Sylius\Component\Promotion\Repository\PromotionRepositoryInterface;
+use Sylius\Component\Taxation\Repository\TaxCategoryRepositoryInterface;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
+use Symfony\Contracts\Translation\TranslatorInterface;
 
 class SetupCommand extends Command
 {
@@ -119,8 +121,11 @@ class SetupCommand extends Command
         FactoryInterface $currencyFactory,
         PromotionRepositoryInterface $promotionRepository,
         FactoryInterface $promotionFactory,
+        TaxCategoryRepositoryInterface $taxCategoryRepository,
+        FactoryInterface $taxCategoryFactory,
         ManagerRegistry $doctrine,
         SlugifyInterface $slugify,
+        TranslatorInterface $translator,
         string $locale)
     {
         $this->productRepository = $productRepository;
@@ -142,10 +147,15 @@ class SetupCommand extends Command
         $this->promotionRepository = $promotionRepository;
         $this->promotionFactory = $promotionFactory;
 
+        $this->taxCategoryRepository = $taxCategoryRepository;
+        $this->taxCategoryFactory = $taxCategoryFactory;
+
         $this->paymentMethodRepository =
             $doctrine->getRepository(PaymentMethod::class);
 
         $this->slugify = $slugify;
+
+        $this->translator = $translator;
 
         $this->locale = $locale;
 
@@ -190,6 +200,9 @@ class SetupCommand extends Command
 
         $output->writeln('<info>Checking Sylius free delivery promotion is present…</info>');
         $this->createFreeDeliveryPromotion($output);
+
+        $output->writeln('<info>Checking Sylius taxes are present…</info>');
+        $this->createSyliusTaxes($output);
 
         return 0;
     }
@@ -390,6 +403,45 @@ class SetupCommand extends Command
 
         } else {
             $output->writeln('Promotion « FREE_DELIVERY » already exists');
+        }
+    }
+
+    private function createSyliusTaxes(OutputInterface $output)
+    {
+
+
+        $expectedTaxCategories = [
+            [
+                'name' => 'tax_category.food',
+                'code' => 'FOOD',
+            ],
+            [
+                'name' => 'tax_category.drink',
+                'code' => 'DRINK',
+            ],
+            [
+                'name' => 'tax_category.alcoholic_drink',
+                'code' => 'ALCOHOLIC_DRINK',
+            ],
+            [
+                'name' => 'tax_category.service',
+                'code' => 'SERVICE',
+            ],
+        ];
+
+        foreach ($expectedTaxCategories as $data) {
+
+            $taxCategory = $this->taxCategoryRepository->findOneByCode($data['code']);
+
+            if (null === $taxCategory) {
+                $output->writeln(sprintf('Creating tax category « %s »', $data['code']));
+                $taxCategory = $this->taxCategoryFactory->createNew();
+                $taxCategory->setCode($data['code']);
+                $taxCategory->setName($data['code']);
+            }
+
+            // var_dump($taxCategory->getName());
+            # code...
         }
     }
 }
